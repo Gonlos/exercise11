@@ -8,7 +8,6 @@ services:
       - DEBUG=debug:*
     deploy:
       replicas: 3
-    build: message/
     image: message
     ports:
       - 9007
@@ -25,10 +24,14 @@ services:
       - replica_message
       - redis
   canary:
+    env_file:
+      - message/.env
+    environment:
+        - SERVICE_NAME=service-v2
+        - DEBUG=debug:*
     deploy:
       replicas: 1
-    build: message/
-    image: message
+    image: message-v
     ports:
       - 9007
     links:

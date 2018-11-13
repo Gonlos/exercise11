@@ -37,7 +37,12 @@ const messageSchema = {
   }
 };
 
+app.get("/version", (req, res) => {
+  res.status(200).send("version");
+});
+
 app.get("/health", health);
+
 app.post("/messages", bodyParser.json(), validate({ body: messageSchema }), sendMessage);
 
 app.get("/messages", getMessages);
