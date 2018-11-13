@@ -47,9 +47,3 @@ docker service create \
 También puede sernos conveniente la posibilidad de añadir un header a las peticiones que queremos enrutar explícitamente a las nuevas réplicas.
 
 - Aplica la configuracion de HAProxy para headers y reinicia el contenedor (puedes utilizar docker-compose) para cargar la nueva configuración
-
-- Despliega algún cambio
-
-- Inspecciona brevemente la configuración y deduce el header a insertar a `ab` para enrutar correctamente a las réplicas nuevas.
-
-- Promueve el cambio al resto de réplicas
