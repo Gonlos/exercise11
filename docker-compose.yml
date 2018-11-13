@@ -1,69 +1,26 @@
 version: "3"
 services:
-  message:
-    build: message/
-    ports:
-      - "9007:9007"
-    links:
-      - messageapp
-      - mongodb_message
-      - replica_message
-      - redis
-      - credit
+  registrator:
+    image: gliderlabs/registrator
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock
+    command: -internal consul://consul:8500
     depends_on:
-      - messageapp
-      - mongodb_message
-      - replica_message
-      - redis
-  credit:
-    build: credit/
-    ports:
-      - "9017:9017"
+      - consul
     links:
-      - mongodb_credit
-      - replica_credit
-      - redis
+      - consul
+
+  consul:
+    image: consul
+    command: "agent -server -bootstrap -ui -client=0.0.0.0 -bind='{{ GetPrivateIP }}'"
+
+  balancer:
+    image: haproxy:1.8-alpine
     depends_on:
-      - mongodb_credit
-      - replica_credit
-      - redis
-  messageapp:
-    image: cabify/backend-bootcamp-messageapp
-    ports:
-      - "3000:3000"
-
-  mongodb_credit:
-    image: mongo
-    command: mongod --port 27017    
+      - registrator
+    links:
+      - registrator
     volumes:
-      - ./credit/data/db:/credit/data/db
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     ports:
-      - 27017:27017
-  replica_credit:
-    image: mongo
-    command: mongod --port 27018    
-    volumes:
-      - ./credit/data/replica:/credit/data/replica
-    ports:
-      - 27018:27018
-
-  mongodb_message:
-    image: mongo
-    command: mongod --port 27027
-    volumes:
-      - ./message/data/db:/message/data/db
-    ports:
-      - 27027:27027
-  replica_message:
-    image: mongo
-    command: mongod --port 27028
-    volumes:
-      - ./message/data/replica:/message/data/replica
-    ports:
-      - 27028:27028
-
-  redis:
-    image: redis
-    ports:
-      - 6379:6379
-
+      - 48151:48151
