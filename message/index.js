@@ -38,7 +38,7 @@ const messageSchema = {
 };
 
 app.get("/version", (req, res) => {
-  res.status(200).send("version");
+  res.status(200).send(process.env.SERVICE_NAME);
 });
 
 app.get("/health", health);
