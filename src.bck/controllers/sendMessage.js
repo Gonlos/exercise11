@@ -16,8 +16,8 @@ module.exports = function(params, done) {
     if (current_credit > 0) {
       const postOptions = {
         host: `${process.env.MESSAGEAPP || "localhost"}`,
-        // host: "messageapp",
-        // host: "localhost",
+
+
         port: 3000,
         path: "/message",
         method: "post",

@@ -50,7 +50,7 @@ queue.getJobsCount = function(type = "credit") {
 };
 
 queue.on("error", function(err) {
-  // console.log("Oops... ");
+
 });
 
 module.exports = queue;

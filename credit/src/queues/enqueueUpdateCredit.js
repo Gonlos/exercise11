@@ -14,7 +14,7 @@ const enqueueMessage = parameters => {
         messageId,
         credit
       })
-      // .delay(10000)
+
       .save(function(err) {
         if (!err) {
           console.log("save JOB");

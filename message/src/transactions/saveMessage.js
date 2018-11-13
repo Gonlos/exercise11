@@ -5,7 +5,7 @@ const { cleanClone } = require("../utils");
 function saveMessageReplica(replica, retries) {
   const MessageReplica = Message("replica");
   if (retries > 0) {
-    // replica.markModified("body");
+
     console.log("saveMessageReplica", replica);
     return MessageReplica.findOneAndUpdate({ messageId: replica.messageId }, replica, {
       upsert: true,
@@ -36,7 +36,7 @@ function saveMessageTransaction(newValue) {
       return cleanClone(doc);
     })
     .then(clone => {
-      // let replica = new MessageReplica(clone);
+
       saveMessageReplica(clone, 3);
       return clone;
     })

@@ -3,8 +3,6 @@ const mongoose = require("mongoose");
 const servers = {
   primary: `${process.env.MONGODB || "localhost"}:27027`,
   replica: `${process.env.REPLICA || "localhost"}:27028`
-  // primary: "127.0.0.1:27017",
-  // replica: "127.0.0.1:27018"
 };
 const database = "cabify_bootcamp";
 

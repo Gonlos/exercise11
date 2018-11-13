@@ -6,7 +6,7 @@ module.exports = function(messageParams, cb) {
   const MessageModel = Message();
   let message = new MessageModel(messageParams);
 
-  // if (message.status == "OK") {
+
   updateCreditTransaction(
     {
       amount: { $gte: 1 },
@@ -29,7 +29,7 @@ module.exports = function(messageParams, cb) {
       }
     }
   );
-  // } else {
-  //   cb();
-  // }
+
+
+
 };

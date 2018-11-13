@@ -5,9 +5,9 @@ const debug = require("debug")("debug:transactionUpdateCredit");
 const enqueueUpdateCredit = require("../queues/enqueueUpdateCredit");
 
 function updateCredit(creditModel, conditions, newValue) {
-  // conditions = {
-  //   $inc: { amount }
-  // };
+
+
+
   return creditModel.findOneAndUpdate(conditions, newValue, {
     new: true,
     upsert: true,

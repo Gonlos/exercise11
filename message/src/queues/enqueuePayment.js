@@ -8,7 +8,7 @@ const enqueuePayment = ({ messageId, location }) => {
         messageId,
         location
       })
-      // .delay(10000)
+
       .save(function(err) {
         if (!err) {
           debug("jobPayment:ok", { messageId, location });

@@ -51,7 +51,7 @@ queue.getJobsCount = function(type = "message") {
 };
 
 queue.on("error", function(err) {
-  // console.log("Oops... ");
+
 });
 
 module.exports = queue;
