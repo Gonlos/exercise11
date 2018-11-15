@@ -1,55 +1,51 @@
-# Ejercicio 9
+# Ejercicio 11
 
-## 1. Introduccion
+## Introducción
 
-Hasta hora hemos hablado puramente de cuestiones de codigo. Hemos de tener en cuenta que ese codigo, eventualmente, ha de ser ejecutado de alguna manera controlable y predecible.
-En este ejercicio practicaremos estrategias de despliegue a producción y nos protegeremos contra fallos críticos que puedan dejar nuestro sistema inutilizable.
+Ya tenemos nuestra aplicación prácticamente terminada. Es el momento de considerar cómo vamos a monitorizar, detectar y reaccionar ante problemas en producción.
 
-### 2. Arquitectura del ejercicio
+En este ejercicio exploraremos la observabilidad de nuestro sistema. Mejoraremos el formato de nuestros logs, reportaremos métricas a un panel de analíticas y analizaremos el comportamiento entre servicios mediante el uso de trazas distribuidas.
 
-Proveemos de una topología con un balanceador de carga (puerto 48151), conectado a un Service Discovery (Consul). Gracias al Service Discovery, añadir o quitar réplicas registrará automáticamente los cambios en el balanceador de carga, permitiendo mucha mayor elasticidad y reacción a cambios.
-Puedes utilizar docker service para controlar el número de réplicas.
+### 1 - Estandarizando el formato de los logs
 
-Como observación importante, en la configuración de haproxy de la que se os provee, se configuran servicios con nombres `service-v1` y `service-v2`; por consistencia con esta particularidad de la configuración, tenéis que definir variables de entorno al lanzar los contenedores de vuestros servicios: `SERVICE_NAME`, con valor `service-v1` para el conjunto de ré
-plicas estables y `service-v2` en los canarios.
+Reportar información es un buen comienzo, sin embargo no es suficiente. Los logs han de poder ser clasificados y analizados en un futuro de una manera eficiente. El formato de los logs ha de estandarizarse para almacenarlos, indexarlos y buscar en ellos de manera más eficiente.
 
-### 3. Cómo realizar un despliegue
+- Estandarizar el formato de logs mediante el uso de una librería especializada de logs.
+- Asegúrate que errores no recuperables se presenten con el nivel de _error_.
+- Asegúrate que errores recuperables se presenten como el nivel de _warning_ .
+- Asegúrate que información para _debugear_ se presente con nivel de _debug_.
+- Asegúrate no queda ninguna error sin logarse en la aplicación.
 
-Supongamos que tenemos una arquitectura similar a la que se desarrollo hasta el ejercicio 8 (e incluida en el ejemplo). Un backend distribuido en varios microservicios, cada uno de los cuales se ejecuta redundantemente para reducir [SPOFs](https://en.wikipedia.org/wiki/Single_point_of_failure).
+### 2 - Monitorizando métricas
 
-Idealmente, cuando aumentamos la version de un servicio, este cambio se llevara a la realidad y nuestra feature estara completa. En la realidad, existen una infinidad de escenarios que podrian hacer que la nueva version del servicio falle estrepitosamente.
-Se hace necesario tener mecanismos de prevencion de desastres.
-Para prevenir desastres, el concepto, en general, es muy sencillo: consiste en que solamente una parte reducida de los clientes "disfruten" de la nueva feature, de forma que los danyos colaterales solo puedan afectar a esta parte reducida de clientes y no a todos los demas.
-Esto se puede realizar enrutando el trafico de forma aleatoria y arbitraria (p.ej, solo el 0.01% de los clientes son dirigidos al nuevo software, manteniendo a todos los demas fuera de la prueba), mecanismo en el que principalmente consisten las metodologias blue/green y canary.
-Tambien es posible marcar al conjunto de clientes (p.ej. con headers de HTTP), de forma que solo estos disfruten de la nueva feature.
+Para conocer cómo se comporta nuestro sistema en producción, hemos de poder exponer métricas internas de cada servicio, al igual que montar paneles de análisis que nos presenten datos de una manera amigable.
 
-#### 3.1. Canary deployments
+Vamos a introducir un servicio de estadísticas en nuestra topología, expondremos nuestras métricas y crearemos paneles desde los cuales poder monitorizar e investigar el comportamiento de nuestro sistema en tiempo real.
 
-- Despliega la arquitectura descrita con tu propia version de message y credit, y aumenta el número de réplicas de cada uno de los servicios a 4. Comprueba que el trafico se esta enrutando a todas las replicas correctamente.
+- Instalar una imagen de [Grafana](https://grafana.com/) con plugin de [Prometheus](https://prometheus.io/).
+- Instrumentar aplicación con _endpoint_ de métricas para Prometheus.
+- Exponer las siguientes métricas mediante Prometheus y configurar sus paneles correspondientes en Grafana.
+  - Ratio de peticiones
+  - Ratio de errores
+  - Tiempo de respuesta
+  - Latencia de principio a fin en elementos en la cola
+  - Latencia en publicar en la cola
+  - Ratio de publicación de mensajes en la cola
+  - Ratio de errores en publicación en la cola
 
-- Añade tu feature! Puedes, simplemente, anadir un endpoint de prueba (p.ej, endpoint `/version`, que dé información sobre la version que está sirviendo la petición)
+### 3 - Seguimiento de peticiones
 
-- Despliega el servicio en fases y comprueba que para el total de peticiones, solo un bajo número de ellas contienen la funcionalidad. Para ello, utiliza:
+Las métricas por servicio son muy útiles pero desafortunadamente ofrecen una visión parcial del sistema en su conjunto.
 
-```
-docker service create \
-    --name NOMBRE_SERVICIO \
-    --replicas=1 \
-    NOMBRE_IMAGEN
-```
+Para poder analizar cuellos de botella en el sistema a nivel global, tendremos que cambiar la forma mediante la cual interactuamos con otros servicios. Tendremos que añadir información extra a las peticiones para poder seguirlas en nuestro sistema.
 
-- Prueba el nuevo endpoint, basta con `ab 1000 -n 5 localhost:48151/NUEVO_ENDPOINT_AQUI`. Si todo ha ido correctamente, solo 100 peticiones deberian de haber sido respondidas correctamente.
+- Introducir Jaeger (_Open Tracing_) en la topología de tu sistema.
+- Instrumentar la aplicación con Jaeger. Extraer y pasar el identificador de traza a los servicios con los que tu aplicación se comunica y pasar la información oportuna al agente de Jaeger.
 
-- Una vez estemos seguros de que todo ha ido correctamente, simplemente es necesario reducir el número de réplicas del antiguo servicio y aumentar el número de réplicas del nuevo servicio. Para ello, puedes utilizar `docker service scale`
+### 4 - Alertando problemas
 
-#### 3.2. Targetted oriented deployments
+Los paneles de información creados en puntos anteriores nos permiten monitorizar nuestro sistema, pero desgraciadamente requieren de interacción activa por nuestra parte. Tenemos que ir a los paneles de información para conocer el estado de nuestro sistema.
 
-También puede sernos conveniente la posibilidad de añadir un header a las peticiones que queremos enrutar explícitamente a las nuevas réplicas.
+Podemos lanzar alertas que nos avisen de situaciones que requieran atención urgente.
 
-- Aplica la configuracion de HAProxy para headers y reinicia el contenedor (puedes utilizar docker-compose) para cargar la nueva configuración
-
-- Despliega algún cambio
-
-- Inspecciona brevemente la configuración y deduce el header a insertar a `ab` para enrutar correctamente a las réplicas nuevas.
-
-- Promueve el cambio al resto de réplicas
+- Crear una alerta sobre una métrica a elegir en Grafana e informar a un canal de Slack a tu elección. Puedes informarte a ti mismo.
