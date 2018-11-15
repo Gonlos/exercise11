@@ -50,8 +50,8 @@ queue.getJobsCount = function(type = "message") {
   });
 };
 
-queue.on("error", function(err) {
+queue.on("error", function(err) {});
 
-});
+queue.kue = { Job: { get: kue.Job.get } };
 
 module.exports = queue;

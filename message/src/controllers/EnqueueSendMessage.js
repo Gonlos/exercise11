@@ -8,9 +8,9 @@ module.exports = function(req, res) {
     .catch(responseError(res));
 };
 
-const responseUrlMessage = res => messageId => {
+const responseUrlMessage = res => message => {
   debug("respondo mensaje");
-  res.send(`http://localhost:9005/message/${messageId}/status`);
+  res.send(message);
 };
 const responseError = res => err => {
   debug("respondo error", err.message);

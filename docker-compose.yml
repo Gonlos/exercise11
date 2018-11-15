@@ -5,10 +5,10 @@ services:
       - message/.env
     environment:
       - SERVICE_NAME=service-v1
-      - DEBUG=debug:*
     deploy:
-      replicas: 3
-    image: message-v
+      replicas: 1
+    build: message/
+    image: message:exercise11
     ports:
       - 9007
     links:
@@ -23,33 +23,9 @@ services:
       - mongodb_message
       - replica_message
       - redis
-  canary:
-    env_file:
-      - message/.env
-    environment:
-        - SERVICE_NAME=service-v2
-        - DEBUG=debug:*
-    deploy:
-      replicas: 1
-    image: message-v2
-    ports:
-      - 9007
-    links:
-      - messageapp
-      - mongodb_message
-      - replica_message
-      - redis
-      - credit
-    depends_on:
-      - messageapp
-      - mongodb_message
-      - replica_message
-      - redis
-    environment:
-      - SERVICE_NAME=service-v2
   credit:
     build: credit/
-    image: credit
+    image: credit:exercise11
     env_file:
       - credit/.env
     ports:

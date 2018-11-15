@@ -20,60 +20,68 @@ module.exports = function(params, done) {
 
   let postReq = http.request(postOptions);
 
-  postReq.on("response", postRes => {
-    if (postRes.statusCode === 200) {
+  return new Promise((resolve, reject) => {
+    postReq.on("response", postRes => {
+      if (postRes.statusCode === 200) {
+        enqueuePayment({ messageId: params.messageId, location: params.location });
+        saveMessage(
+          {
+            ...params,
+            status: "OK"
+          },
+          function(_result, error) {
+            if (error) {
+              debug("messageapp:response:error", error.message);
+            } else {
+              debug("messageapp:response:ok");
+            }
+            done();
+            resolve("--OK--");
+          }
+        );
+      } else {
+        console.error("Error while sending message");
+        console.log("responseError");
+
+        saveMessage(
+          {
+            ...params,
+            status: "ERROR"
+          },
+          () => {
+            debug("Internal server error: SERVICE ERROR");
+            done();
+            reject("--ERROR--");
+          }
+        );
+      }
+    });
+
+    postReq.setTimeout(1000);
+
+    postReq.on("timeout", () => {
+      console.error("Timeout Exceeded!");
+      postReq.abort();
       enqueuePayment({ messageId: params.messageId, location: params.location });
       saveMessage(
         {
           ...params,
-          status: "OK"
-        },
-        function(_result, error) {
-          if (error) {
-            debug("messageapp:response:error", error.message);
-          } else {
-            debug("messageapp:response:ok");
-          }
-          done();
-        }
-      );
-    } else {
-      console.error("Error while sending message");
-      console.log("responseError");
-
-      saveMessage(
-        {
-          ...params,
-          status: "ERROR"
+          status: "TIMEOUT"
         },
         () => {
-          debug("Internal server error: SERVICE ERROR");
+          debug("Internal server error: TIMEOUT");
           done();
+          reject("--TIMEOUT--");
         }
       );
-    }
+    });
+
+    postReq.on("error", error => {
+      done();
+      reject(error);
+    });
+
+    postReq.write(body);
+    postReq.end();
   });
-
-  postReq.setTimeout(3000);
-
-  postReq.on("timeout", () => {
-    console.error("Timeout Exceeded!");
-    postReq.abort();
-    enqueuePayment({ messageId: params.messageId, location: params.location });
-    saveMessage(
-      {
-        ...params,
-        status: "TIMEOUT"
-      },
-      () => {
-        debug("Internal server error: TIMEOUT");
-        done();
-      }
-    );
-  });
-
-  postReq.on("error", () => {});
-
-  postReq.write(body);
-  postReq.end();
 };

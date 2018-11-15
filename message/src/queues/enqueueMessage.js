@@ -3,13 +3,13 @@ const queue = require("./");
 const saveMessage = require("../clients/saveMessage");
 const debug = require("debug")("debug:enqueueMessage");
 const futureCredit = require("../clients/futureCredit");
-
+let isRecovering = false;
 const enqueueMessage = parameters => {
   return new Promise((resolve, reject) => {
     futureCredit
       .getCredit()
       .then(credit => {
-        debug("credit?", parameters);
+        debug("credit?", credit);
         if (credit > 0) {
           let messageId = uuidv1();
           saveMessage(
@@ -25,33 +25,45 @@ const enqueueMessage = parameters => {
               } else {
                 debug("messageapp:response:ok", _result);
                 if (credit >= _result.location.cost) {
-                  futureCredit.addCredit(-_result.location.cost);
-                  const jobSendMessage = queue
-                    .create("message", {
-                      ..._result,
-                      messageId,
-                      status: "PENDING"
-                    })
-                    .delay(10000)
-                    .save(function(err) {
-                      if (!err) {
-                        debug("save JOB");
-                        saveMessage(
-                          {
-                            ...parameters,
-                            messageId,
-                            status: "PENDING"
-                          },
-                          (_res, err) => {
-                            if (err) {
-                              return reject(err);
-                            }
+                  queue.getJobsCount("message").then(count => {
+                    debug(`messages enqueued: ${count}`);
+                    if (count <= 5) isRecovering = false;
+                    if (count >= 10) isRecovering = true;
+                    if (count < 10 && !isRecovering) {
+                      futureCredit.addCredit(-_result.location.cost);
+                      const jobSendMessage = queue
+                        .create("message", {
+                          ..._result,
+                          messageId,
+                          status: "PENDING"
+                        })
+                        .delay(10000)
+                        .save(function(err) {
+                          if (!err) {
+                            debug("save JOB");
+                            saveMessage(
+                              {
+                                ...parameters,
+                                messageId,
+                                status: "PENDING"
+                              },
+                              (_res, err) => {
+                                if (err) {
+                                  return reject(err);
+                                }
+                              }
+                            );
+
+                            return resolve(`http://localhost:9007/message/${messageId}/status`);
                           }
-                        );
-                        return resolve(messageId);
-                      }
-                      return reject(err);
-                    });
+                          return reject(err);
+                        });
+                    } else {
+                      return reject({
+                        message: `Server is busy. Try later ${count} ${isRecovering}`
+                      });
+                    }
+                  });
                 } else {
                   futureCredit.initCredit();
                   return reject({ message: "No Credit" });
