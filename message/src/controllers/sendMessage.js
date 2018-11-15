@@ -1,11 +1,12 @@
 const http = require("http");
 const saveMessage = require("../clients/saveMessage");
 const enqueuePayment = require("../queues/enqueuePayment");
-const debug = require("debug")("debug:controller/sendMessage");
+
+const logger = require("../logger")("debug:controller/sendMessage");
 
 module.exports = function(params, done) {
   const body = JSON.stringify({ destination: params.destination, body: params.body });
-  debug("params", params);
+  logger.debug(`params , ${params}`);
   const postOptions = {
     host: `${process.env.MESSAGEAPP || "localhost"}`,
     port: 3000,
@@ -31,17 +32,17 @@ module.exports = function(params, done) {
           },
           function(_result, error) {
             if (error) {
-              debug("messageapp:response:error", error.message);
+              logger.debug(`messageapp:response:error", ${error.message}`);
             } else {
-              debug("messageapp:response:ok");
+              logger.debug(`messageapp:response:ok`);
             }
             done();
             resolve("--OK--");
           }
         );
       } else {
-        console.error("Error while sending message");
-        console.log("responseError");
+        logger.error(`Error while sending message`);
+        logger.debug(`responseError`);
 
         saveMessage(
           {
@@ -49,7 +50,7 @@ module.exports = function(params, done) {
             status: "ERROR"
           },
           () => {
-            debug("Internal server error: SERVICE ERROR");
+            logger.error(`Internal server error: SERVICE ERROR`);
             done();
             reject("--ERROR--");
           }
@@ -60,7 +61,7 @@ module.exports = function(params, done) {
     postReq.setTimeout(1000);
 
     postReq.on("timeout", () => {
-      console.error("Timeout Exceeded!");
+      logger.error(`Timeout Exceeded!`);
       postReq.abort();
       enqueuePayment({ messageId: params.messageId, location: params.location });
       saveMessage(
@@ -69,7 +70,6 @@ module.exports = function(params, done) {
           status: "TIMEOUT"
         },
         () => {
-          debug("Internal server error: TIMEOUT");
           done();
           reject("--TIMEOUT--");
         }
@@ -77,6 +77,7 @@ module.exports = function(params, done) {
     });
 
     postReq.on("error", error => {
+      logger.error(error);
       done();
       reject(error);
     });

@@ -1,6 +1,6 @@
 const http = require("http");
 const express = require("express");
-
+const logger = require("./src/logger")("message:index");
 const bodyParser = require("body-parser");
 const { Validator, ValidationError } = require("express-json-validator-middleware");
 
@@ -58,5 +58,5 @@ app.use(function(err, req, res, next) {
 });
 
 app.listen(9007, function() {
-  console.log("App started on PORT 9007");
+  logger.info("App started on PORT 9007");
 });

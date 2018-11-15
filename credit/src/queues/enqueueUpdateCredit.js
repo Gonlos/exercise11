@@ -1,7 +1,8 @@
 const uuidv1 = require("uuid/v1");
 const queue = require("./");
 const getCredit = require("../clients/getCredit");
-const debug = require("debug")("debug:enqueueMessage");
+
+const logger = require("../logger")("debug:enqueueMessage");
 
 const enqueueMessage = parameters => {
   let { messageId, credit } = parameters;

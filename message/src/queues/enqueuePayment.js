@@ -1,5 +1,6 @@
 const queue = require("./");
-const debug = require("debug")("debug:enqueuePayment");
+
+const logger = require("../logger")("debug:enqueuePayment");
 
 const enqueuePayment = ({ messageId, location }) => {
   return new Promise((resolve, reject) => {
@@ -11,13 +12,13 @@ const enqueuePayment = ({ messageId, location }) => {
 
       .save(function(err) {
         if (!err) {
-          debug("jobPayment:ok", { messageId, location });
+          logger.debug(`jobPayment:ok", ${{ messageId, location }}`);
           return resolve({
             messageId,
             location
           });
         }
-        debug("jobPayment:error", err);
+        logger.error(`jobPayment:error", ${err}`);
         return reject(err);
       });
   });

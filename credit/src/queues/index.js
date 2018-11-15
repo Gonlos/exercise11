@@ -1,4 +1,4 @@
-const debug = require("debug")("debug:queues");
+const logger = require("../logger")("debug:queues");
 const kue = require("kue");
 const queue = kue.createQueue({
   redis: {
@@ -9,7 +9,7 @@ const queue = kue.createQueue({
 queue.getInactiveJobsCount = (type = "credit") => {
   return new Promise((resolve, reject) => {
     queue.inactiveCount(type, function(a, b) {
-      debug("getInactiveJobsCount", type, a, b);
+      logger.debug(`getInactiveJobsCount, ${type}, ${a}, ${b}`);
       if (a) return reject(a);
       resolve(b);
     });
@@ -19,7 +19,7 @@ queue.getInactiveJobsCount = (type = "credit") => {
 queue.getDelayedJobsCount = (type = "credit") => {
   return new Promise((resolve, reject) => {
     queue.delayedCount(type, function(a, b) {
-      debug("getDelayedJobsCount", type, a, b);
+      logger.debug(`getDelayedJobsCount, ${type}, ${a}, ${b}`);
       if (a) return reject(a);
       resolve(b);
     });
@@ -29,7 +29,7 @@ queue.getDelayedJobsCount = (type = "credit") => {
 queue.getActiveJobsCount = (type = "credit") => {
   return new Promise((resolve, reject) => {
     queue.activeCount(type, function(a, b) {
-      debug("getActiveJobsCount", type, a, b);
+      logger.debug(`getActiveJobsCount, ${type}, ${a}, ${b}`);
       if (a) return reject(a);
       resolve(b);
     });
@@ -44,13 +44,11 @@ queue.getJobsCount = function(type = "credit") {
       queue.getActiveJobsCount(type)
     ]).then(counts => {
       resolve(counts.reduce((t, a) => t + a));
-      debug("promise.all", type, counts);
+      logger.debug(`promise.all, ${type}, ${counts}`);
     });
   });
 };
 
-queue.on("error", function(err) {
-
-});
+queue.on("error", function(err) {});
 
 module.exports = queue;

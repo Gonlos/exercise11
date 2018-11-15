@@ -1,7 +1,8 @@
 const uuidv1 = require("uuid/v1");
 const queue = require("./");
 const saveMessage = require("../clients/saveMessage");
-const debug = require("debug")("debug:enqueueMessage");
+
+const logger = require("../logger")("debug:enqueueMessage");
 const futureCredit = require("../clients/futureCredit");
 let isRecovering = false;
 const enqueueMessage = parameters => {
@@ -9,7 +10,7 @@ const enqueueMessage = parameters => {
     futureCredit
       .getCredit()
       .then(credit => {
-        debug("credit?", credit);
+        logger.info(`credit", ${credit}`);
         if (credit > 0) {
           let messageId = uuidv1();
           saveMessage(
@@ -20,13 +21,13 @@ const enqueueMessage = parameters => {
             },
             function(_result, error) {
               if (error) {
-                debug("messageapp:response:error", error.message);
+                logger.error(`messageapp:response:error", ${error.message}`);
                 return reject(error);
               } else {
-                debug("messageapp:response:ok", _result);
+                logger.debug(`messageapp:response:ok", ${_result}`);
                 if (credit >= _result.location.cost) {
                   queue.getJobsCount("message").then(count => {
-                    debug(`messages enqueued: ${count}`);
+                    logger.info(`messages enqueued: ${count}`);
                     if (count <= 5) isRecovering = false;
                     if (count >= 10) isRecovering = true;
                     if (count < 10 && !isRecovering) {
@@ -40,7 +41,7 @@ const enqueueMessage = parameters => {
                         .delay(10000)
                         .save(function(err) {
                           if (!err) {
-                            debug("save JOB");
+                            logger.debug(`save JOB`);
                             saveMessage(
                               {
                                 ...parameters,

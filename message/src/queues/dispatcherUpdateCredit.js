@@ -1,15 +1,10 @@
 const queue = require("./");
-const debug = require("debug")("debug:dispatcherUpdateCredit");
 
-// queue.process("updateCredit", (job, done) => {
-//   debug("worker", job.data);
-// debug("clase?", futureCredit);
-//   futureCredit.updateCredit(job.data.credit, done);
-// });
+const logger = require("../logger")("debug:dispatcherUpdateCredit");
 
 module.exports = cb => {
   queue.process("updateCredit", (job, done) => {
-    debug("worker", job.data);
+    logger.silly(`worker", ${job.data}`);
     cb(job.data.credit, done);
   });
 };

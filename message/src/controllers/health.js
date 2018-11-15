@@ -1,7 +1,8 @@
 const os = require("os");
-const debug = require("debug")("debug:hostname");
+
+const logger = require("../logger")("debug:hostname");
 
 module.exports = (req, res) => {
-  debug(`This is ${os.hostname()}`);
+  logger.silly(`This is ${os.hostname()}`);
   res.send(`This is ${os.hostname()}`);
 };

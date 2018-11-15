@@ -1,13 +1,11 @@
 const database = require("../database");
 const Credit = require("../models/credit");
 const { cleanClone } = require("../utils");
-const debug = require("debug")("debug:transactionUpdateCredit");
+
+const logger = require("../logger")("debug:transactionUpdateCredit");
 const enqueueUpdateCredit = require("../queues/enqueueUpdateCredit");
 
 function updateCredit(creditModel, conditions, newValue) {
-
-
-
   return creditModel.findOneAndUpdate(conditions, newValue, {
     new: true,
     upsert: true,
@@ -19,7 +17,7 @@ function updateCreditTransaction(conditions, newValue) {
   const CreditPrimary = Credit();
   const CreditReplica = Credit("replica");
   let oldValue;
-  debug("newValue", newValue);
+  logger.debug(`newValue", ${newValue}`);
 
   return Promise.resolve(CreditPrimary.findOne(conditions))
     .then(doc => {
